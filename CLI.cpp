@@ -5,19 +5,13 @@
 #include <fstream>
 #include <string>
 #include <thread>
+
+#include "include/ShellHost.h"
+
 using namespace std;
-//
-void shell();
-void echo1(string);
 
 int main()
 {
-   //Call shell thread
-   // thread tmain (shell());
-   shell();
-}
-void shell() {
-
     //read text File
     string userType, hostType, userAnswer;
     ifstream inFile;
@@ -27,32 +21,14 @@ void shell() {
         exit(1);
     }
     inFile >> userType >> hostType;
-    //Shell loop
-    while (1) {
-        cout << userType << "@" << hostType << "$ ";
-        getline(cin, userAnswer);
-        //getline(cin, userAnswer, ' ');
-        if (userAnswer == "echo") {
-            echo1(userAnswer);
-        }
-        else if (userAnswer == "->") {
+    
+    // Initialize shell host object
+    // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
+    ShellHost shell(userType, hostType, vector<string>());
 
-        }
-        else if (userAnswer == "->>") {
+    // Start shell and block until it exits
+    thread tshell(shell);
+    tshell.join();
 
-        }
-        else if (userAnswer == "&") {
-
-        }
-        else if (userAnswer == "exit") {
-            exit(1);
-        }
-        else {
-            cout << userAnswer << " is not recognized as an internal or external command, operable program or batch file." << endl;
-        }
-    }
+    return 0;
 }
-void echo1(string call) {
-    cout << "echo choo   o o o o " << endl;
-}
-
