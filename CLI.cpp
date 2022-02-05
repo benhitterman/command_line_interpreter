@@ -2,33 +2,52 @@
 //
 
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <string>
 #include <thread>
-
+#include <vector>
 #include "include/ShellHost.h"
 
 using namespace std;
 
 int main()
 {
-    //read text File
-    string userType, hostType, userAnswer;
+    // read text File
+    string userType, hostType, userAnswer, nextPath, line;
     ifstream inFile;
     inFile.open("ShellScreen.txt");
-    if (!inFile) {
+    if (!inFile)
+    {
         cout << "Unable to open File";
         exit(1);
     }
-    inFile >> userType >> hostType;
-    
-    // Initialize shell host object
-    // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
-    ShellHost shell(userType, hostType, vector<string>());
 
-    // Start shell and block until it exits
-    thread tshell(shell);
-    tshell.join();
+    // container holding all paths
+    vector<string> pathways;
 
-    return 0;
+    getline(inFile, userType);
+    getline(inFile, hostType);
+    // getting pathways and placing in vector
+    while (getline(inFile, line))
+    {
+        stringstream ss(line);
+        while (getline(ss, nextPath, ','))
+        {
+            // check to remove 'PATH='
+            unsigned long pathAddress = nextPath.find('=');
+            nextPath = nextPath.substr(pathAddress + 1, nextPath.length());
+            pathways.push_back(nextPath);
+        }
+
+        // Initialize shell host object
+        // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
+        ShellHost shell(userType, hostType, vector<string>());
+
+        // Start shell and block until it exits
+        thread tshell(shell);
+        tshell.join();
+
+        return 0;
+    }
 }

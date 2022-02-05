@@ -1,2 +1,3 @@
 COEN346User
 host1
+PATH=usr/bin,bin,usr/local/bin,usr/someprog/bin
