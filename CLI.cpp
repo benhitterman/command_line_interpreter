@@ -35,14 +35,14 @@ int main()
         while (getline(ss, nextPath, ','))
         {
             // check to remove 'PATH='
-            unsigned long pathAddress = nextPath.find('=');
+            char pathAddress = nextPath.find('=');
             nextPath = nextPath.substr(pathAddress + 1, nextPath.length());
             pathways.push_back(nextPath);
         }
 
         // Initialize shell host object
         // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
-        ShellHost shell(userType, hostType, vector<string>());
+        ShellHost shell(userType, hostType, pathways);
 
         // Start shell and block until it exits
         thread tshell(shell);
