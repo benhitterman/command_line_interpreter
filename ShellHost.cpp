@@ -1,4 +1,5 @@
 #include "include/ShellHost.h"
+#include "include/ExecutionUtils.h"
 
 #include <iostream>
 #include <filesystem>
@@ -23,6 +24,7 @@ ShellHost::ShellHost(std::string user, std::string host, std::vector<std::string
 
 void ShellHost::operator()()
 {
+FoundExec:
     while (1)
     {
         string command;
@@ -52,18 +54,38 @@ void ShellHost::operator()()
                 if (isPathExist(path[i]))
                 {
                     // checks if file exists in path
-                    current_path(path[i]);
                     vector<string> executable;
+                    // checking if user entered exe again
+                    if (command.substr(command.length() - 4, command.length()) != ".exe")
+                    {
+                        command = command.append(".exe");
+                    }
+                    // creating full directory
+                    string fullExec = "";
+                    fullExec.append(path[i]);
+                    fullExec.append(command);
+
+                    // adding .exe to end of command
                     executable.push_back(command);
                     for (const auto &file : executable)
                     {
-                        exists(file) ? cout << "Exists\n" : cout << "Doesn't exist\n";
-                        // TODO: execute found file
+                        if (exists(fullExec))
+                        {
+                            ExecutionUtils::executeCommand(fullExec);
+                            // marks execution found and leaves else statement
+                            goto FoundExec;
+                        }
                     }
                 }
             }
-            // only if no exe is found through all paths and current path
-            cout << command << " is not recognized as an internal or external command, operable program or batch file." << endl;
+            // checks current directory
+            if (exists(command))
+            {
+                ExecutionUtils::executeCommand(command);
+            }
+            else
+                // only if no exe is found through all paths and current path
+                cout << command << " is not recognized as an internal or external command, operable program or batch file." << endl;
         }
     }
 }
