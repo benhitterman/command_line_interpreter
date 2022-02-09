@@ -1,5 +1,4 @@
-#ifndef EXECUTION_UTILS
-#define EXECUTION_UTILS
+#include "include/ExecutionUtils.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -51,5 +50,3 @@ namespace ExecutionUtils
         }
     }
 }
-
-#endif
