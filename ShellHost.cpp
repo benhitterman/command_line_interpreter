@@ -27,10 +27,52 @@ void ShellHost::operator()()
 FoundExec:
     while (1)
     {
-        string command;
+        string command, fileName, argument;
         cout << user << "@" << host << "$ ";
         getline(cin, command);
         // getline(cin, userAnswer, ' ');
+        
+        char firstWhitespace = command.find(" ");
+        string command1 = command.substr(0, firstWhitespace);
+        
+        char ampersand = command.rfind("&");
+        bool isBackground = 0;
+        if (ampersand != string::npos) {
+            isBackground = 1;
+        }
+        
+        char firstArrow = command.find("->");
+        char firstDoubleArrow = command.find("->>");
+        
+        if (firstDoubleArrow != string::npos) {
+            argument = command.substr(firstWhitespace + 1, firstDoubleArrow - firstWhitespace - 2);
+            if (!isBackground) {
+                fileName = command.substr(firstDoubleArrow + 4, command.length());
+            }
+            else {
+                fileName = command.substr(firstDoubleArrow + 4, ampersand - firstDoubleArrow - 5);
+            }
+        }
+        else if (firstArrow != string::npos) {
+            argument = command.substr(firstWhitespace + 1, firstArrow - firstWhitespace - 2);
+            if (!isBackground) {
+                fileName = command.substr(firstArrow + 3, command.length());
+            }
+            else {
+                fileName = command.substr(firstArrow + 3, ampersand - firstArrow - 4);
+            }
+        }
+        else {
+            fileName = "";
+            if (!isBackground) {
+                argument = command.substr(firstWhitespace + 1, command.length());
+            }
+            else {
+                argument = command.substr(firstWhitespace + 1, ampersand - firstWhitespace - 2);
+                cout <<"";
+            }
+        }
+        
         if (command == "echo")
         {
         }
