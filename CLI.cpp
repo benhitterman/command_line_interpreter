@@ -39,15 +39,17 @@ int main()
             nextPath = nextPath.substr(pathAddress + 1, nextPath.length());
             pathways.push_back(nextPath);
         }
-
-        // Initialize shell host object
-        // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
-        ShellHost shell(userType, hostType, pathways);
-
-        // Start shell and block until it exits
-        thread tshell(shell);
-        tshell.join();
-
-        return 0;
     }
+    inFile.close();
+
+    // Initialize shell host object
+    // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
+    ShellHost shell(userType, hostType, pathways);
+
+    // Start shell and block until it exits
+    thread tshell(shell);
+    tshell.join();
+
+    return 0;
+    
 }
