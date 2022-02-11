@@ -49,4 +49,22 @@ namespace ExecutionUtils
             outFile << output;
         }
     }
+
+    void echo(const std::string& message, const std::string& filePath, bool shouldOverwrite)
+    {
+        if (!filePath.empty())
+        {
+            std::ofstream outFile(filePath, shouldOverwrite ? std::ios_base::trunc : std::ios_base::app);
+            if (!outFile.is_open())
+            {
+                std::cout << "Error: could not open output file " << filePath << std::endl;
+                return;
+            }
+            outFile << message;
+        }
+        else
+        {
+            std::cout << message << std::endl;
+        }
+    }
 }

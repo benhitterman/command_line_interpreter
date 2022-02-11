@@ -12,8 +12,12 @@ public:
     ShellHost(std::string user, std::string host, std::vector<std::string> path);
     ~ShellHost();
     void operator()();
+
 private:
-    ParsedInput ParseUserInput(const std::string& input) const;
+    ParsedInput parseUserInput(const std::string& input) const;
+    bool doesPathExist(const std::string& path) const;
+    bool executeCommand(const ParsedInput& input);
+
 private:
     std::string user;
     std::string host;
