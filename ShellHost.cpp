@@ -14,6 +14,7 @@ ShellHost::ShellHost(std::string user, std::string host, std::vector<std::string
 
 ShellHost::~ShellHost()
 {
+    // Join & delete all background threads started during the lifetime of the CLI
     for (auto& backgroundThread : backgroundThreads)
     {
         backgroundThread->join();
@@ -90,6 +91,7 @@ ParsedInput ShellHost::parseUserInput(const std::string& input) const
 {
     string fileName, argument;
 
+    // Everything up to the first whitespace is the executable
     size_t firstWhitespace = input.find(" ");
     if (firstWhitespace == string::npos)
     {
@@ -98,13 +100,13 @@ ParsedInput ShellHost::parseUserInput(const std::string& input) const
     }
     string command1 = input.substr(0, firstWhitespace);
 
-    size_t ampersand = input.rfind("&");
-    bool isBackground = 0;
-    if (ampersand != string::npos)
-    {
-        isBackground = 1;
-    }
+    // An ampersand as the last non-whitespace char indicates that the command should be run in the background
+    size_t lastNonWhitespace = input.find_last_not_of(" \n");
+    bool isBackground = (input[lastNonWhitespace] == '&');
 
+    // Everything after the executable name and before the arrow are the arguments
+    // Everything after the arrow and before the ampersand/end of string is the filename
+    // If there is no arrow, everything after the command until the ampersand/end of string are the arguments
     size_t firstArrow = input.find("->");
     size_t firstDoubleArrow = input.find("->>");
     bool shouldOverwrite = (firstArrow != string::npos) && (firstDoubleArrow == string::npos);
@@ -117,7 +119,7 @@ ParsedInput ShellHost::parseUserInput(const std::string& input) const
         }
         else
         {
-            fileName = input.substr(firstDoubleArrow + 4, ampersand - firstDoubleArrow - 5);
+            fileName = input.substr(firstDoubleArrow + 4, lastNonWhitespace - firstDoubleArrow - 5);
         }
     }
     else if (firstArrow != string::npos)
@@ -129,7 +131,7 @@ ParsedInput ShellHost::parseUserInput(const std::string& input) const
         }
         else
         {
-            fileName = input.substr(firstArrow + 3, ampersand - firstArrow - 4);
+            fileName = input.substr(firstArrow + 3, lastNonWhitespace - firstArrow - 4);
         }
     }
     else
@@ -141,7 +143,7 @@ ParsedInput ShellHost::parseUserInput(const std::string& input) const
         }
         else
         {
-            argument = input.substr(firstWhitespace + 1, ampersand - firstWhitespace - 2);
+            argument = input.substr(firstWhitespace + 1, lastNonWhitespace - firstWhitespace - 2);
         }
     }
 
@@ -167,6 +169,7 @@ bool ShellHost::executeCommand(const ParsedInput& input)
             {
                 if (entry.path().stem().string() == input.getExecutable())
                 {
+                    // Prepare the command that will be passed to the OS shell via popen
                     stringstream commandBuilder;
                     commandBuilder << '"' << path[i] << '/' << input.getExecutable() << '"' << ' ' << input.getArguments();
                     
@@ -182,6 +185,7 @@ bool ShellHost::executeCommand(const ParsedInput& input)
     {
         if (entry.path().stem().string() == input.getExecutable() && !foundExecutable)
         {
+            // Prepare the command that will be passed to the OS shell via popen
             stringstream commandBuilder;
             commandBuilder << '"' << filesystem::current_path().string() << '/' << input.getExecutable() << '"' << ' ' << input.getArguments();
 
@@ -193,6 +197,8 @@ bool ShellHost::executeCommand(const ParsedInput& input)
 
     if (!foundExecutable) return false;
 
+    // Create a new thread on the heap and store a pointer to it, if the thread is in the background
+    // Otherwise create the thread and immediately block until it exits
     if (input.shouldRunInBackground())
     {
         if (input.getOutputFile().empty())

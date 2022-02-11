@@ -43,7 +43,6 @@ int main()
     inFile.close();
 
     // Initialize shell host object
-    // TODO: Parse & pass PATH to shell. For now, give it an empty string vector.
     ShellHost shell(userType, hostType, pathways);
 
     // Start shell and block until it exits
