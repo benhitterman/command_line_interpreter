@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <sstream>
 #include <sys/stat.h>
 using namespace std;
 
@@ -17,9 +18,17 @@ ShellHost::ShellHost(std::string user, std::string host, std::vector<std::string
 {
 }
 
+ShellHost::~ShellHost()
+{
+    for (auto& backgroundThread : backgroundThreads)
+    {
+        backgroundThread->join();
+        delete backgroundThread;
+    }
+}
+
 void ShellHost::operator()()
 {
-FoundExec:
     while (1)
     {
         string command, fileName, argument;
@@ -27,67 +36,20 @@ FoundExec:
         getline(cin, command);
         // getline(cin, userAnswer, ' ');
 
-        char firstWhitespace = command.find(" ");
-        string command1 = command.substr(0, firstWhitespace);
-
-        char ampersand = command.rfind("&");
-        bool isBackground = 0;
-        if (ampersand != string::npos)
+        ParsedInput parsedInput;
+        try
         {
-            isBackground = 1;
+            parsedInput = ParseUserInput(command);
         }
-
-        char firstArrow = command.find("->");
-        char firstDoubleArrow = command.find("->>");
-
-        if (firstDoubleArrow != string::npos)
+        catch (const std::out_of_range& ex)
         {
-            argument = command.substr(firstWhitespace + 1, firstDoubleArrow - firstWhitespace - 2);
-            if (!isBackground)
-            {
-                fileName = command.substr(firstDoubleArrow + 4, command.length());
-            }
-            else
-            {
-                fileName = command.substr(firstDoubleArrow + 4, ampersand - firstDoubleArrow - 5);
-            }
+            cout << "Error: Malformed command." << endl;
+            cout << "Please enter a command of the form '[executable] [arguments] [-> file/to/overwrite]/[->> file/to/append] [&]'" << endl;
+            continue;
         }
-        else if (firstArrow != string::npos)
-        {
-            argument = command.substr(firstWhitespace + 1, firstArrow - firstWhitespace - 2);
-            if (!isBackground)
-            {
-                fileName = command.substr(firstArrow + 3, command.length());
-            }
-            else
-            {
-                fileName = command.substr(firstArrow + 3, ampersand - firstArrow - 4);
-            }
-        }
-        else
-        {
-            fileName = "";
-            if (!isBackground)
-            {
-                argument = command.substr(firstWhitespace + 1, command.length());
-            }
-            else
-            {
-                argument = command.substr(firstWhitespace + 1, ampersand - firstWhitespace - 2);
-                cout << "";
-            }
-        }
+        
 
         if (command == "echo")
-        {
-        }
-        else if (command == "->")
-        {
-        }
-        else if (command == "->>")
-        {
-        }
-        else if (command == "&")
         {
         }
         else if (command == "exit")
@@ -104,9 +66,12 @@ FoundExec:
                     // checks if file exists in path
                     for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path[i]))
                     {
-                        if (entry.path().stem().string() == command)
+                        if (entry.path().stem().string() == parsedInput.getExecutable())
                         {
-                            ExecutionUtils::executeCommand(command);
+                            stringstream commandBuilder;
+                            commandBuilder << '"' << path[i] << '/' << parsedInput.getExecutable() << '"' << ' ' << parsedInput.getArguments();
+                            
+                            ExecutionUtils::executeCommandWithConsoleOutput(commandBuilder.str());
                             doneExecution = true;
                             break;
                         }
@@ -116,10 +81,10 @@ FoundExec:
             // checks current directory
             for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
             {
-                if (entry.path().stem().string() == command && !doneExecution)
+                if (entry.path().stem().string() == parsedInput.getExecutable() && !doneExecution)
                 {
                     doneExecution = true;
-                    ExecutionUtils::executeCommand(command);
+                    ExecutionUtils::executeCommand(parsedInput.getExecutable() + " " + parsedInput.getArguments());
                     break;
                 }
             }
@@ -130,4 +95,67 @@ FoundExec:
             }
         }
     }
+}
+
+ParsedInput ShellHost::ParseUserInput(const std::string& input) const
+{
+    string fileName, argument;
+
+    size_t firstWhitespace = input.find(" ");
+    if (firstWhitespace == string::npos)
+    {
+        // Only an executable, no args or anything else
+        return ParsedInput(input);
+    }
+    string command1 = input.substr(0, firstWhitespace);
+
+    size_t ampersand = input.rfind("&");
+    bool isBackground = 0;
+    if (ampersand != string::npos)
+    {
+        isBackground = 1;
+    }
+
+    size_t firstArrow = input.find("->");
+    size_t firstDoubleArrow = input.find("->>");
+
+    if (firstDoubleArrow != string::npos)
+    {
+        argument = input.substr(firstWhitespace + 1, firstDoubleArrow - firstWhitespace - 2);
+        if (!isBackground)
+        {
+            fileName = input.substr(firstDoubleArrow + 4, input.length());
+        }
+        else
+        {
+            fileName = input.substr(firstDoubleArrow + 4, ampersand - firstDoubleArrow - 5);
+        }
+    }
+    else if (firstArrow != string::npos)
+    {
+        argument = input.substr(firstWhitespace + 1, firstArrow - firstWhitespace - 2);
+        if (!isBackground)
+        {
+            fileName = input.substr(firstArrow + 3, input.length());
+        }
+        else
+        {
+            fileName = input.substr(firstArrow + 3, ampersand - firstArrow - 4);
+        }
+    }
+    else
+    {
+        fileName = "";
+        if (!isBackground)
+        {
+            argument = input.substr(firstWhitespace + 1, input.length());
+        }
+        else
+        {
+            argument = input.substr(firstWhitespace + 1, ampersand - firstWhitespace - 2);
+            cout << "";
+        }
+    }
+
+    return ParsedInput(command1, argument, fileName, firstDoubleArrow != string::npos, isBackground);
 }

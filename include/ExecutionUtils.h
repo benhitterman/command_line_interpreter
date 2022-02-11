@@ -8,6 +8,8 @@ namespace ExecutionUtils
     std::string executeCommand(const std::string& command);
     void executeCommandWithConsoleOutput(const std::string& command);
     void executeCommandWithFileOutput(const std::string& command, const std::string& filePath, bool shouldOverwrite);
+
+    void echo(const std::string& message, const std::string& filePath = "", bool shouldOverwrite = false);
 }
 
 #endif
